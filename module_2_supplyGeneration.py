@@ -81,12 +81,23 @@ def compute_required_firm_capacity(
         required[year] = average_mw * (1.0 + reserve_margin)
     return required
 
+def anual_energy(source: GenerationSource) -> float:
+    return source.capacity_mw * source.capacity_factor * 8760.0
+
+def total_annual_cost(source: GenerationSource, annual_energy_mwh: float = None) -> float:
+    if annual_energy_mwh is None:
+        annual_energy_mwh = anual_energy(source)
+    annualized_capex = source.capex_per_mw * source.capacity_mw / source.lifetime_years
+    opex = source.opex_per_mwh * annual_energy_mwh
+    return annualized_capex + opex
 
 if __name__ == "__main__":
     base_dir = Path(__file__).resolve().parent
     sources = build_default_sources()
     demand = load_demand_projections(base_dir / "module2_demand_projections.csv")
     required_capacity = compute_required_firm_capacity(demand, reserve_margin=0.15)
+    anual_energy_dict = {source.name: anual_energy(source) for source in sources}
 
     print("Loaded sources:", [source.name for source in sources])
     print("Required firm capacity (MW) sample:", dict(list(required_capacity.items())[:3]))
+    print("Annual energy production (MWh) sample:", anual_energy_dict)
