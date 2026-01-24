@@ -116,6 +116,39 @@ def _dispatch_order(sources: Iterable[GenerationSource]) -> List[GenerationSourc
     )
 
 
+def _init_vintages(
+    sources: Iterable[GenerationSource], start_year: int
+) -> Dict[str, List[Tuple[int, float]]]:
+    vintages: Dict[str, List[Tuple[int, float]]] = {}
+    for source in sources:
+        vintages[source.name] = [(start_year, source.capacity_mw)]
+    return vintages
+
+
+def _retire_capacity(
+    vintages: Dict[str, List[Tuple[int, float]]],
+    sources_by_name: Dict[str, GenerationSource],
+    year: int,
+) -> Dict[str, float]:
+    retired: Dict[str, float] = {}
+    for name, entries in vintages.items():
+        lifetime = sources_by_name[name].lifetime_years
+        remaining: List[Tuple[int, float]] = []
+        retired_capacity = 0.0
+        for install_year, capacity in entries:
+            if year - install_year >= lifetime:
+                retired_capacity += capacity
+            else:
+                remaining.append((install_year, capacity))
+        vintages[name] = remaining
+        retired[name] = retired_capacity
+    return retired
+
+
+def _current_capacity(vintages: Dict[str, List[Tuple[int, float]]]) -> Dict[str, float]:
+    return {name: sum(capacity for _, capacity in entries) for name, entries in vintages.items()}
+
+
 def simulate_supply_mix(
     demand_df: pd.DataFrame,
     sources: List[GenerationSource],
@@ -134,18 +167,26 @@ def simulate_supply_mix(
 
     for scenario, scenario_df in demand_df.groupby("scenario"):
         scenario_df = scenario_df.sort_values("year")
-        current_capacities = {name: source.capacity_mw for name, source in base_sources.items()}
+        start_year = int(scenario_df.iloc[0]["year"])
+        vintages = _init_vintages(sources, start_year)
+        current_capacities = _current_capacity(vintages)
 
         for _, row in scenario_df.iterrows():
             year = int(row["year"])
             annual_demand_mwh = float(row["annual_demand_mwh"])
+            retired_capacity = _retire_capacity(vintages, base_sources, year)
+            current_capacities = _current_capacity(vintages)
             required_capacity_mw = (annual_demand_mwh / 8760.0) * (1.0 + reserve_margin)
             total_capacity_mw = sum(current_capacities.values())
+            capacity_added = {name: 0.0 for name in base_sources}
             if required_capacity_mw > total_capacity_mw:
                 growth_needed = required_capacity_mw - total_capacity_mw
                 for name, weight in growth_weights.items():
-                    current_capacities[name] += growth_needed * weight
+                    added = growth_needed * weight
+                    capacity_added[name] = added
+                    vintages[name].append((year, added))
                 total_capacity_mw = sum(current_capacities.values())
+                current_capacities = _current_capacity(vintages)
 
             updated_sources: List[GenerationSource] = []
             for name, base in base_sources.items():
@@ -182,6 +223,8 @@ def simulate_supply_mix(
                         "scenario": scenario,
                         "source": source.name,
                         "capacity_mw": round(source.capacity_mw, 3),
+                        "capacity_added_mw": round(capacity_added.get(source.name, 0.0), 3),
+                        "capacity_retired_mw": round(retired_capacity.get(source.name, 0.0), 3),
                         "capacity_factor": source.capacity_factor,
                         "energy_generated_mwh": round(generated_mwh, 3),
                         "annualized_capex": round(capex, 2),
