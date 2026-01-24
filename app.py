@@ -1,17 +1,84 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import pandas as pd
 
 # Defining the main information
 
 st.set_page_config(
-    page_title = "Energy Transition Simulator",
-    page_icon = "⚡",
-    layout = "wide",
-    initial_sidebar_state = "expanded"
+    page_title="Energy Transition Simulator",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-#Sidebar for user input 
+# Helper function to generate sample scenario data
+def generate_scenario_data(city, population, energy_old, energy_new):
+    """Generate sample data for visualization - line chart format"""
+    years = np.arange(2025, 2051)
+    
+    # Annual Demand (red line) - growing over time
+    annual_demand = 100 + (years - 2025) * 3.5  # Linear growth
+    
+    # Energy Generated (yellow line) - starts lower, catches up and exceeds
+    energy_generated = 80 + (years - 2025) * 4.2  # Slightly faster growth
+    
+    data = {
+        'Year': years,
+        'Annual Demand': annual_demand,
+        'Energy Generated': energy_generated
+    }
+    
+    return pd.DataFrame(data)
+
+def create_line_chart(df, energy_old, energy_new):
+    """Create simple line chart for Annual Demand vs Energy Generated"""
+    fig = go.Figure()
+    
+    # Annual Demand line (red)
+    fig.add_trace(go.Scatter(
+        x=df['Year'], 
+        y=df['Annual Demand'],
+        name='Annual Demand',
+        mode='lines+markers',
+        line=dict(color='#E74C3C', width=3),
+        marker=dict(size=8, color='#E74C3C')
+    ))
+    
+    # Energy Generated line (yellow/green)
+    fig.add_trace(go.Scatter(
+        x=df['Year'], 
+        y=df['Energy Generated'],
+        name='Energy Generated',
+        mode='lines+markers',
+        line=dict(color='#F1C40F', width=3),
+        marker=dict(size=8, color='#F1C40F')
+    ))
+    
+    fig.update_layout(
+        title=f'Energy Transition: {energy_old} → {energy_new}',
+        xaxis_title='Year',
+        yaxis_title='Energy (TWh)',
+        hovermode='x unified',
+        height=500,
+        template='plotly_dark',
+        plot_bgcolor='#2C3E50',
+        paper_bgcolor='#34495E',
+        font=dict(size=14),
+        xaxis=dict(
+            showgrid=True,
+            gridcolor='#4A5F7F',
+            dtick=5
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor='#4A5F7F'
+        )
+    )
+    
+    return fig
+
+# Sidebar for user input 
 with st.sidebar:
     st.header("📊 Scenario Configuration")
 
@@ -23,7 +90,7 @@ with st.sidebar:
         help="Enter the name of the city or region to model"
     )
 
-    # Population Slider (fixed type issue)
+    # Population Slider
     population = st.slider(
         "Population (Hundreds of Thousands)",
         min_value=1,
@@ -36,7 +103,7 @@ with st.sidebar:
     # Energy Sources Dropdowns
     st.subheader("⚡ Energy Sources")
 
-    # Old Energy Source (single selection)
+    # Old Energy Source
     energy_old = st.selectbox(
         "Current Energy Source (to phase out)",
         ["Coal", "Natural Gas", "Fossil Fuels"],
@@ -44,7 +111,7 @@ with st.sidebar:
         help="Carbon-based source to transition away from"
     )
 
-    # New energy source (single selection)
+    # New energy source
     energy_new = st.selectbox(
         "New Energy Source",
         ["Hydro", "Solar", "Wind"],
@@ -60,6 +127,10 @@ with st.sidebar:
         st.success("✅ Scenarios generated successfully!")
 
 # Main content area
+st.title("⚡ Energy Transition Simulator")
+st.markdown("AI-Assisted Visual Decision-Support System for Clean Energy Planning")
+st.markdown("---")
+
 st.subheader("Selected Configuration")
 
 # Display user selections
@@ -81,5 +152,28 @@ with col4:
 
 st.markdown("---")
 
-# Placeholder for your charts and visualizations
-st.info("Charts and analysis will appear here after generating scenarios")
+# Chart visualization
+if 'scenarios_generated' in st.session_state and st.session_state['scenarios_generated']:
+    
+    # Generate data
+    scenario_df = generate_scenario_data(city, population, energy_old, energy_new)
+    
+    # Display the line chart
+    st.plotly_chart(
+        create_line_chart(scenario_df, energy_old, energy_new),
+        use_container_width=True
+    )
+    
+    # Add download option
+    st.markdown("---")
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        csv = scenario_df.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Data",
+            data=csv,
+            file_name=f'{city}_energy_scenario.csv',
+            mime='text/csv'
+        )
+else:
+    st.info("👈 Configure your scenario in the sidebar and click 'Generate Scenarios' to see the chart")
