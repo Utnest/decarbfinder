@@ -84,7 +84,7 @@ def summarize_year(records: Iterable[HourlyDemand]) -> DemandSummary:
 
 
 def load_demand_directory(
-    directory: str | Path, pattern: str = "PUB_Demand_*.csv"
+    directory: str | Path, pattern: str = "data/PUB_Demand_*.csv"
 ) -> Tuple[Dict[int, DemandSummary], Dict[int, List[float]]]:
     directory = Path(directory)
     summaries: Dict[int, DemandSummary] = {}
@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
     export_projections_csv(
         projections,
-        output_path=Path(__file__).resolve().parent / "module2_demand_projections.csv",
+        output_path=Path(__file__).resolve().parent / "data"/ "module2_demand_projections.csv",
         scenario_name="base_case"
     )
     print("Loaded years:", sorted(summaries))
