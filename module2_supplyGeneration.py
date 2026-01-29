@@ -259,12 +259,12 @@ def simulate_supply_mix(
 if __name__ == "__main__":
     base_dir = Path(__file__).resolve().parent
     sources = build_default_sources()
-    demand = load_demand_projections(base_dir / "module2_demand_projections.csv")
+    demand = load_demand_projections(base_dir / "data" / "module2_demand_projections.csv")
     per_source_df, per_year_df = simulate_supply_mix(demand, sources, reserve_margin=0.15)
 
-    output_path = base_dir / "module2_supply_outputs.csv"
+    output_path = base_dir / "data" / "module2_supply_outputs.csv"
     per_source_df.to_csv(output_path, index=False)
-    totals_path = base_dir / "module2_supply_totals.csv"
+    totals_path = base_dir / "data" / "module2_supply_totals.csv"
     per_year_df.to_csv(totals_path, index=False)
 
     print("Loaded sources:", [source.name for source in sources])
