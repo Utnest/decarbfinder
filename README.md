@@ -226,6 +226,25 @@ Storage is dispatched to reduce unmet demand and smooth renewable output.
 
 ---
 
+## (WORK IN PROGRESS) Module 5 Implementation process
+
+Explaining what is `module_5_optimizer.py`:
+
+* Objective is to get the total system cost and total emissions summed over 2025-2050.
+* We input Module 2 totals (cost + emissions) and Module 3 reliability outputs.
+* From there we set a reliability rule that answers THE question for us: "does this energy transition plan ACTAULLY keep the lights on?", as in, is it a viable energy system? We ask this because even if a scenario is cheap and has low emission, it doesn't mean that it supplies a reliable and consistent supply at all times. To answer this, we set two conditions that are hard constraint and whichscenarios must pass to be considered reliable (subject to change): reserve margin >= 0.15 and unmet demand <= 0.0. Reserve margin is basically seeing how much extra capacity we have beyond average demand AKA "remainder" energy. useful to know during specific cases such as demand spike or weather changes.
+* Method: min-max normalized weighted sum with preset weight sets.
+* Weight sets: low_cost (0.7/0.3), low_emissions (0.3/0.7), balanced (0.5/0.5).
+  These span common policy priorities (affordability, decarbonization, balanced).
+* Best scenario definition: lowest score with tie-breakers
+  (total cost, total emissions, scenario name).
+* Output: CSV with scores, explanations, and machine-readable metadata.
+
+
+This is a lightweight baseline intended for extension (e.g., CVXPY/Pyomo).
+
+---
+
 ### Module 6: Visualization & User Interface
 
 **Purpose:** Make results understandable to non‑technical users.
