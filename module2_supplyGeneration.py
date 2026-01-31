@@ -185,8 +185,8 @@ def simulate_supply_mix(
                     added = growth_needed * weight
                     capacity_added[name] = added
                     vintages[name].append((year, added))
-                total_capacity_mw = sum(current_capacities.values())
                 current_capacities = _current_capacity(vintages)
+                total_capacity_mw = sum(current_capacities.values())
 
             updated_sources: List[GenerationSource] = []
             for name, base in base_sources.items():

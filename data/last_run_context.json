@@ -1,0 +1,19 @@
+{
+  "inputs": {
+    "scenario_name": "toronto_coal_to_solar",
+    "population_multiplier": 1.0,
+    "population_growth": 0.003,
+    "electrification_uplift": 0.005,
+    "reserve_margin": 0.15,
+    "start_year": 2025,
+    "end_year": 2050,
+    "energy_old": "Coal",
+    "energy_new": "Solar"
+  },
+  "metadata": {
+    "base_year": 2025,
+    "base_total_mwh": 145587496.0,
+    "cagr": 0.01906117345172964,
+    "scenario_name": "toronto_coal_to_solar"
+  }
+}
